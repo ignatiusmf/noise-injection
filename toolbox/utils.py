@@ -20,12 +20,13 @@ def evaluate_model(model, loader):
 
 
 def plot_the_things(train_loss, test_loss, train_acc, test_acc, experiment_path):
-        plt.plot(np.log10(np.array(train_loss)), linestyle='dotted',color='b', label=f'Train Loss')
-        plt.plot(np.log10(np.array(test_loss)), linestyle='solid',color='b', label=f'Test Loss')
+        plt.plot(np.array(train_loss[0]), linestyle='dotted',color='b', label=f'Train Hard Loss')
+        plt.plot(np.array(train_loss[1]), linestyle='dashed',color='b', label=f'Train Soft Loss')
+        plt.plot(np.array(test_loss), linestyle='solid',color='b', label=f'Test Loss')
 
         plt.xlabel('Epoch')
         plt.xlim(0,len(test_loss))
-        plt.ylabel('Log10 Loss')
+        plt.ylabel('Loss')
     
         plt.legend()
         plt.savefig(f'experiments/{experiment_path}/Loss.png')
