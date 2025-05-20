@@ -41,19 +41,20 @@ def feature_map_distillation(teacher_outputs, student_outputs, targets):
     student_fmap = student_outputs[2]
 
     noise = torch.normal(mean=0.0, std=NOISE_STD, size=teacher_fmap.shape, device=DEVICE)
+    noise2 = torch.normal(mean=0.0, std=NOISE_STD, size=teacher_fmap.shape, device=DEVICE)
     if NOISE_TARGET == 'both':
         noisy_fmap_student = student_fmap + noise 
-        noisy_fmap_teacher = teacher_fmap + noise 
-        brute_loss = BETA * F.l1_loss(FT(noisy_fmap_teacher), FT(noisy_fmap_student))
+        noisy_fmap_teacher = teacher_fmap + noise2 
+        soft_loss = BETA * F.l1_loss(FT(noisy_fmap_teacher), FT(noisy_fmap_student))
     elif NOISE_TARGET == 'student':
         noisy_fmap_student = student_fmap + noise 
-        brute_loss = BETA * F.l1_loss(FT(teacher_fmap), FT(noisy_fmap_student))
+        soft_loss = BETA * F.l1_loss(FT(teacher_fmap), FT(noisy_fmap_student))
     elif NOISE_TARGET == 'teacher':
         noisy_fmap_teacher = teacher_fmap + noise 
-        brute_loss = BETA * F.l1_loss(FT(noisy_fmap_teacher), FT(student_fmap))
+        soft_loss = BETA * F.l1_loss(FT(noisy_fmap_teacher), FT(student_fmap))
 
     hard_loss = F.cross_entropy(student_outputs[3], targets)
-    return brute_loss + hard_loss
+    return soft_loss, hard_loss
 
 parser = argparse.ArgumentParser(description='Run a training script with custom parameters.')
 parser.add_argument('--noise_std', type=float, default='1')
@@ -94,7 +95,7 @@ for i in range(EPOCHS):
     print(i)
     teacher.eval()
     student.train()
-    val_loss, correct, total = 0, 0, 0
+    total_hard_loss, total_soft_loss, correct, total = 0, 0, 0, 0
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.to(DEVICE), targets.to(DEVICE)
 
