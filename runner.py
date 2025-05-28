@@ -53,16 +53,17 @@ def generate_python_cmd(experiment_name, noise_std, noise_target):
     print(output)
     return output
 
-run = 0 
-noise_stds = np.linspace(0.25, 3, 6)
+runs = 2
+noise_stds = np.arange(0, 4, 0.333)
 targets = ['student', 'teacher', 'both']
 
-for noise_target in targets:
-    for noise_std in noise_stds:
-        experiment_name = f'{noise_target}/std{noise_std:.2f}/{run}'
-        if check_path_and_skip(experiment_name): continue
-        python_cmd = generate_python_cmd(experiment_name, noise_std, noise_target)
-        generate_pbs_script(python_cmd, experiment_name)
+for run in range(runs):
+    for noise_target in targets:
+        for noise_std in noise_stds:
+            experiment_name = f'{noise_target}/std{noise_std:.2f}/{run}'
+            if check_path_and_skip(experiment_name): continue
+            python_cmd = generate_python_cmd(experiment_name, noise_std, noise_target)
+            generate_pbs_script(python_cmd, experiment_name)
 
 
 print('All experiments are finished / queued')
