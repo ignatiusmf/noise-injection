@@ -49,11 +49,11 @@ def check_path_and_skip(experiment_name):
     return False
 
 def generate_python_cmd(experiment_name, noise_std, noise_target):
-    output = f"python test_noise.py --noise_std {noise_std} --noise_target {noise_target} --experiment_name {experiment_name}"
+    output = f"python test_noise.py --noise_std {noise_std:.2f} --noise_target {noise_target} --experiment_name {experiment_name}"
     print(output)
     return output
 
-runs = 2
+runs = 10
 noise_stds = np.arange(0, 4, 0.333)
 targets = ['student', 'teacher', 'both']
 

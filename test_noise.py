@@ -13,10 +13,7 @@ from pathlib import Path
 import argparse
 
 DEVICE = "cuda"
-
-# Hyperparameters
 EPOCHS = 150
-BETA = 125
 BATCH_SIZE = 128*4
 
 class GenerationModule(nn.Module):
