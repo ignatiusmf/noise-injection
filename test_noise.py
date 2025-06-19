@@ -14,21 +14,7 @@ import argparse
 
 DEVICE = "cuda"
 EPOCHS = 150
-BATCH_SIZE = 128*4
-
-class GenerationModule(nn.Module):
-    def __init__(self, in_channels):
-        super().__init__()
-        self.block = nn.Sequential(
-            nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1)
-        )
-
-    def forward(self, x):
-        return self.block(x)
-
-# gen_module = GenerationModule(in_channels=64).to(DEVICE)
+BATCH_SIZE = 128
 
 def FT(x):
     return F.normalize(x.reshape(x.size(0), -1))
@@ -54,7 +40,7 @@ def feature_map_distillation(teacher_outputs, student_outputs, targets):
     return soft_loss, hard_loss
 
 parser = argparse.ArgumentParser(description='Run a training script with custom parameters.')
-parser.add_argument('--noise_std', type=float, default='1')
+parser.add_argument('--noise_std', type=float, default='0')
 parser.add_argument('--noise_target', type=str, default='student')
 parser.add_argument('--experiment_name', type=str, default='no_name')
 args = parser.parse_args()
