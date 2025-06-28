@@ -1,11 +1,14 @@
 from toolbox.models import ResNet112, ResNet56
-from toolbox.data_loader import Cifar100
+from toolbox.data_loader import Cifar100, TinyImageNet
 from toolbox.utils import plot_the_things, evaluate_model
 
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
 import torch.nn as nn
+
+import numpy as np
+import random
 
 import tensorly as tl
 
@@ -23,8 +26,11 @@ def feature_map_distillation(teacher_outputs, student_outputs, targets):
     teacher_fmap = teacher_outputs[2]
     student_fmap = student_outputs[2]
 
-    noise = torch.normal(mean=0.0, std=NOISE_STD, size=teacher_fmap.shape, device=DEVICE)
-    noise2 = torch.normal(mean=0.0, std=NOISE_STD, size=teacher_fmap.shape, device=DEVICE)
+    if NOISE_STD == 0:
+        print("Doing torch.zeros")
+
+    noise = torch.normal(mean=0.0, std=NOISE_STD, size=teacher_fmap.shape, device=DEVICE) if NOISE_STD != 0 else torch.zeros(size=teacher_fmap.shape)
+    noise2 = torch.normal(mean=0.0, std=NOISE_STD, size=teacher_fmap.shape, device=DEVICE) if NOISE_STD != 0 else torch.zeros(size=teacher_fmap.shape)
     if NOISE_TARGET == 'both':
         noisy_fmap_student = student_fmap + noise 
         noisy_fmap_teacher = teacher_fmap + noise2 
@@ -39,10 +45,16 @@ def feature_map_distillation(teacher_outputs, student_outputs, targets):
     hard_loss = F.cross_entropy(student_outputs[3], targets)
     return soft_loss, hard_loss
 
+DATASETS = {
+    'TinyImageNet': TinyImageNet,
+    'Cifar100': Cifar100
+}
+
 parser = argparse.ArgumentParser(description='Run a training script with custom parameters.')
 parser.add_argument('--noise_std', type=float, default='0')
 parser.add_argument('--noise_target', type=str, default='student')
-parser.add_argument('--experiment_name', type=str, default='no_name')
+parser.add_argument('--experiment_name', type=str, default='default')
+parser.add_argument('--dataset', type=str, default='Cifar100', choices=DATASETS.keys())
 args = parser.parse_args()
 
 DISTILLATION = feature_map_distillation
@@ -50,19 +62,27 @@ NOISE_STD = args.noise_std
 NOISE_TARGET = args.noise_target
 BETA = 750
 EXPERIMENT_PATH = args.experiment_name
+DATASET = args.dataset
+
+seed = EXPERIMENT_PATH.split('/')[-1] if EXPERIMENT_PATH.split('/')[-1].isdigit() else 0
+torch.manual_seed(seed)
+torch.cuda.manual_seed(seed)
+np.random.seed(seed)
+random.seed(seed)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
 
 Path(f"experiments/{EXPERIMENT_PATH}").mkdir(parents=True, exist_ok=True)
-print(vars(args))
+print(vars(args), f'{seed=}')
 
-# Model setup
-model_path = r"toolbox/Cifar100_ResNet112.pth"
-teacher = ResNet112(100).to(DEVICE)
+Data = DATASETS[DATASET](BATCH_SIZE, seed=seed)
+trainloader, testloader = Data.trainloader, Data.testloader
+
+model_path = f"toolbox/{DATASET}_ResNet112.pth"
+teacher = ResNet112(Data.class_num).to(DEVICE)
 teacher.load_state_dict(torch.load(model_path, weights_only=True)["weights"])
 
-student = ResNet56(100).to(DEVICE)
-
-Data = Cifar100(BATCH_SIZE)
-trainloader, testloader = Data.trainloader, Data.testloader
+student = ResNet56(Data.class_num).to(DEVICE)
 
 optimizer = optim.SGD(student.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
 scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=EPOCHS)
@@ -119,7 +139,7 @@ for i in range(EPOCHS):
 
     if tea > max_acc:
         max_acc = tea
-        torch.save({'weights': student.state_dict()}, f'experiments/{EXPERIMENT_PATH}/ResNet56.pth')
+        torch.save({'weights': student.state_dict()}, f'experiments/{EXPERIMENT_PATH}/{DATASET}_ResNet56.pth')
     
     plot_the_things((train_hard_loss, train_soft_loss), test_loss, train_acc, test_acc, EXPERIMENT_PATH)
 

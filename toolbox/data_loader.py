@@ -4,16 +4,10 @@ import torch
 import os
 from torchvision.datasets import ImageFolder
 
+import numpy as np
+import random
 
-def get_loaders(dataset: str, batch_size: int, data_root: str = "./data"):
-    """Return train & test loaders for CIFAR-10/100 or Tiny‑ImageNet‑200.
-
-    Args:
-        dataset: "Cifar10", "Cifar100" or "TinyImageNet" (case‑sensitive)
-        batch_size: batch size for the dataloaders
-        data_root: root directory where data lives / will be downloaded
-    """
-    # ── dataset‑specific metadata ──────────────────────────────────────────────
+def get_loaders(dataset: str, batch_size: int, data_root: str = "./data", seed = 0):
     if dataset == "Cifar100":
         ds = torchvision.datasets.CIFAR100
         mean, std = (0.5071, 0.4867, 0.4409), (0.267, 0.256, 0.276)
@@ -64,12 +58,23 @@ def get_loaders(dataset: str, batch_size: int, data_root: str = "./data"):
         testset  = ImageFolder(val_dir,   transform=transform_test)
 
     # ── dataloaders ───────────────────────────────────────────────────────────
+
+    def seed_worker(worker_id):
+        worker_seed = seed + worker_id
+        np.random.seed(worker_seed)
+        random.seed(worker_seed)
+
+    g = torch.Generator()
+    g.manual_seed(seed)
+
     trainloader = torch.utils.data.DataLoader(
         trainset,
         batch_size=batch_size,
         shuffle=True,
         num_workers=num_workers,
         pin_memory=True,
+        worker_init_fn=seed_worker,
+        generator=g
     )
 
     testloader = torch.utils.data.DataLoader(
@@ -86,8 +91,8 @@ def get_loaders(dataset: str, batch_size: int, data_root: str = "./data"):
 class DataHelper:
     """Simple wrapper exposing `.trainloader`, `.testloader`, and metadata."""
 
-    def __init__(self, dataset: str, batch_size: int, data_root: str = "./data"):
-        self.trainloader, self.testloader = get_loaders(dataset, batch_size, data_root)
+    def __init__(self, dataset: str, batch_size: int, data_root: str = "./data", seed = 0):
+        self.trainloader, self.testloader = get_loaders(dataset, batch_size, data_root, seed)
         self.name = dataset
         if dataset == "Cifar100":
             self.class_num = 100
@@ -99,15 +104,14 @@ class DataHelper:
             raise ValueError(f"Unknown dataset: {dataset}")
 
 
-# ── Convenience constructors ────────────────────────────────────────────────
 
-def Cifar10(batch_size: int = 128, data_root: str = "./data") -> DataHelper:
-    return DataHelper("Cifar10", batch_size, data_root)
-
-
-def Cifar100(batch_size: int = 128, data_root: str = "./data") -> DataHelper:
-    return DataHelper("Cifar100", batch_size, data_root)
+def Cifar10(batch_size: int = 128, data_root: str = "./data", seed = 0) -> DataHelper:
+    return DataHelper("Cifar10", batch_size, data_root, seed)
 
 
-def TinyImageNet(batch_size: int = 128, data_root: str = "./data") -> DataHelper:
-    return DataHelper("TinyImageNet", batch_size, data_root)
+def Cifar100(batch_size: int = 128, data_root: str = "./data", seed = 0) -> DataHelper:
+    return DataHelper("Cifar100", batch_size, data_root, seed)
+
+
+def TinyImageNet(batch_size: int = 128, data_root: str = "./data", seed = 0) -> DataHelper:
+    return DataHelper("TinyImageNet", batch_size, data_root, seed)

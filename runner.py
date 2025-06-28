@@ -53,8 +53,8 @@ def generate_python_cmd(experiment_name, noise_std, noise_target):
     print(output)
     return output
 
-runs = 10
-noise_stds = np.arange(0, 4, 0.333)
+runs = 10 
+noise_stds = np.arange(0, 1.667, 0.333)
 targets = ['student', 'teacher', 'both']
 
 for run in range(runs):
@@ -64,6 +64,14 @@ for run in range(runs):
             if check_path_and_skip(experiment_name): continue
             python_cmd = generate_python_cmd(experiment_name, noise_std, noise_target)
             generate_pbs_script(python_cmd, experiment_name)
+
+
+for run in range(2):
+    experiment_name = f'randomness_test/{run}'
+    if check_path_and_skip(experiment_name): continue
+    python_cmd = generate_python_cmd(experiment_name, 0, 'student')
+    generate_pbs_script(python_cmd, experiment_name)
+
 
 
 print('All experiments are finished / queued')
