@@ -42,6 +42,8 @@ class ResNet_simple(nn.Module):
         self.layer2 = self._make_layer(block, 32, num_blocks[1], stride=2)
         self.layer3 = self._make_layer(block, 64, num_blocks[2], stride=2)
         #self.layer4 = self._make_layer(block, 512, num_blocks[3], stride=2)
+
+        self.gap = nn.AdaptiveAvgPool2d(1)
         self.linear = nn.Linear(64*block.expansion, num_classes)
 
         self.model_type = model_type
@@ -67,8 +69,10 @@ class ResNet_simple(nn.Module):
         attention_map.append(out2)
         out3 = self.layer3(out2)
         attention_map.append(out3)
-        out = F.avg_pool2d(out3, 8)
+
+        out = self.gap(out3)
         out = out.view(out.size(0), -1)
+
         out = self.linear(out)
         attention_map.append(out)
         return attention_map

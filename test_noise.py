@@ -29,8 +29,8 @@ def feature_map_distillation(teacher_outputs, student_outputs, targets):
     if NOISE_STD == 0:
         print("Doing torch.zeros")
 
-    noise = torch.normal(mean=0.0, std=NOISE_STD, size=teacher_fmap.shape, device=DEVICE) if NOISE_STD != 0 else torch.zeros(size=teacher_fmap.shape)
-    noise2 = torch.normal(mean=0.0, std=NOISE_STD, size=teacher_fmap.shape, device=DEVICE) if NOISE_STD != 0 else torch.zeros(size=teacher_fmap.shape)
+    noise = torch.normal(mean=0.0, std=NOISE_STD, size=teacher_fmap.shape, device=DEVICE) if NOISE_STD != 0 else torch.zeros(size=teacher_fmap.shape, device=DEVICE)
+    noise2 = torch.normal(mean=0.0, std=NOISE_STD, size=teacher_fmap.shape, device=DEVICE) if NOISE_STD != 0 else torch.zeros(size=teacher_fmap.shape, device=DEVICE)
     if NOISE_TARGET == 'both':
         noisy_fmap_student = student_fmap + noise 
         noisy_fmap_teacher = teacher_fmap + noise2 
@@ -54,7 +54,7 @@ parser = argparse.ArgumentParser(description='Run a training script with custom 
 parser.add_argument('--noise_std', type=float, default='0')
 parser.add_argument('--noise_target', type=str, default='student')
 parser.add_argument('--experiment_name', type=str, default='default')
-parser.add_argument('--dataset', type=str, default='Cifar100', choices=DATASETS.keys())
+parser.add_argument('--dataset', type=str, default='TinyImageNet', choices=DATASETS.keys())
 args = parser.parse_args()
 
 DISTILLATION = feature_map_distillation
@@ -64,7 +64,7 @@ BETA = 750
 EXPERIMENT_PATH = args.experiment_name
 DATASET = args.dataset
 
-seed = EXPERIMENT_PATH.split('/')[-1] if EXPERIMENT_PATH.split('/')[-1].isdigit() else 0
+seed = int(EXPERIMENT_PATH.split('/')[-1]) if EXPERIMENT_PATH.split('/')[-1].isdigit() else 0
 torch.manual_seed(seed)
 torch.cuda.manual_seed(seed)
 np.random.seed(seed)

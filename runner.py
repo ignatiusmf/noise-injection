@@ -48,29 +48,25 @@ def check_path_and_skip(experiment_name):
     total += 1
     return False
 
-def generate_python_cmd(experiment_name, noise_std, noise_target):
-    output = f"python test_noise.py --noise_std {noise_std:.2f} --noise_target {noise_target} --experiment_name {experiment_name}"
+def generate_python_cmd(experiment_name, noise_std, noise_target, dataset):
+    output = f"python test_noise.py --noise_std {noise_std:.2f} --noise_target {noise_target} --experiment_name {experiment_name} --dataset {dataset}"
     print(output)
     return output
 
-runs = 10 
-noise_stds = np.arange(0, 1.667, 0.333)
+runs = 2 
+# noise_stds = np.arange(0, 1.667, 0.333)
 targets = ['student', 'teacher', 'both']
+datasets = ['TinyImageNet', 'Cifar100']
 
 for run in range(runs):
     for noise_target in targets:
-        for noise_std in noise_stds:
-            experiment_name = f'{noise_target}/std{noise_std:.2f}/{run}'
+        for dataset in datasets:
+            noise_std = 0
+            experiment_name = f'torchzero_randominit_tiny/{dataset}/{noise_target}/std{noise_std:.2f}/{run}'
             if check_path_and_skip(experiment_name): continue
-            python_cmd = generate_python_cmd(experiment_name, noise_std, noise_target)
+            python_cmd = generate_python_cmd(experiment_name, noise_std, noise_target, dataset)
             generate_pbs_script(python_cmd, experiment_name)
 
-
-for run in range(2):
-    experiment_name = f'randomness_test/{run}'
-    if check_path_and_skip(experiment_name): continue
-    python_cmd = generate_python_cmd(experiment_name, 0, 'student')
-    generate_pbs_script(python_cmd, experiment_name)
 
 
 

@@ -15,7 +15,7 @@ while $deleted_any; do
     deleted_any=false
     while read -r dir; do
         if [[ -z "$(find "$dir" -mindepth 1 -type d)" && \
-              ! -f "$dir/Accuracy.png" && \
+              ! -f "$dir/metrics.json" && \
               -z "${jobnames[$dir]}" ]]; then
             echo "Deleting $dir"
             rm -rf "$dir"
