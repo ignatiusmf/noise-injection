@@ -17,7 +17,7 @@ import argparse
 
 DEVICE = "cuda"
 EPOCHS = 150
-BATCH_SIZE = 128
+BATCH_SIZE = 128 * 4
 
 def FT(x):
     return F.normalize(x.reshape(x.size(0), -1))
@@ -25,9 +25,6 @@ def FT(x):
 def feature_map_distillation(teacher_outputs, student_outputs, targets):
     teacher_fmap = teacher_outputs[2]
     student_fmap = student_outputs[2]
-
-    if NOISE_STD == 0:
-        print("Doing torch.zeros")
 
     noise = torch.normal(mean=0.0, std=NOISE_STD, size=teacher_fmap.shape, device=DEVICE) if NOISE_STD != 0 else torch.zeros(size=teacher_fmap.shape, device=DEVICE)
     noise2 = torch.normal(mean=0.0, std=NOISE_STD, size=teacher_fmap.shape, device=DEVICE) if NOISE_STD != 0 else torch.zeros(size=teacher_fmap.shape, device=DEVICE)
