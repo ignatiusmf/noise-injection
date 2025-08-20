@@ -1,5 +1,5 @@
 from toolbox.models import ResNet112, ResNet56
-from toolbox.data_loader import Cifar100, TinyImageNet
+from toolbox.data_loader import Cifar100, TinyImageNet, Cifar10
 from toolbox.utils import plot_the_things, evaluate_model
 
 import torch
@@ -44,7 +44,8 @@ def feature_map_distillation(teacher_outputs, student_outputs, targets):
 
 DATASETS = {
     'TinyImageNet': TinyImageNet,
-    'Cifar100': Cifar100
+    'Cifar100': Cifar100,
+    'Cifar10': Cifar10
 }
 
 parser = argparse.ArgumentParser(description='Run a training script with custom parameters.')

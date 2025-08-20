@@ -15,6 +15,22 @@ limit = 10 if testing else 10 - int(
 )
 total = 0
 
+def check_path_and_skip(experiment_name):
+    global total, limit
+    experiment_path = Path(f'experiments/{experiment_name}')
+
+    if experiment_path.exists():
+        return True
+    print(total, limit)
+    if total == limit: 
+        print(f'Queue limit reached, exiting. \n{COUNT}/{TOTAL}, {round(COUNT*100/TOTAL, 2)}%')
+        exit()
+
+    experiment_path.mkdir(parents=True)
+    total += 1
+    return False
+
+
 def generate_pbs_script(python_cmd, experiment_name, time):
     if testing: return
 
@@ -35,38 +51,29 @@ def generate_pbs_script(python_cmd, experiment_name, time):
     finally:
         temp_file.unlink(missing_ok=True)
 
-def check_path_and_skip(experiment_name):
-    experiment_path = Path(f'experiments/{experiment_name}')
-    global total, limit
-    if total == limit: 
-        print('Queue limit reached, exiting')
-        exit()
-
-    if experiment_path.exists():
-        return True
-
-    experiment_path.mkdir(parents=True)
-    total += 1
-    return False
-
 def generate_python_cmd(experiment_name, noise_std, noise_target, dataset):
     output = f"python test_noise.py --noise_std {noise_std:.2f} --noise_target {noise_target} --experiment_name {experiment_name} --dataset {dataset}"
     print(output)
     return output
 
-runs = 2 
-# noise_stds = np.arange(0, 1.667, 0.333)
-targets = ['student', 'teacher', 'both']
-datasets = ['Cifar100'] # ['TinyImageNet', 'Cifar100']
+RUNS = 5 
+NOISES = np.arange(0, 4, 0.333)
+TARGETS = ['student', 'teacher', 'both']
+DATASETS = ['Cifar10', 'Cifar100', 'TinyImageNet']
+TIMES = {'Cifar10': '1:45:00', 'Cifar100': '2:30:00', 'TinyImageNet':'11:00:00'}
 
-for run in range(runs):
-    for noise_target in targets:
-        for dataset in datasets:
-            noise_std = 0
-            experiment_name = f'{dataset}/{noise_target}/std{noise_std:.2f}/{run}'
-            if check_path_and_skip(experiment_name): continue
-            python_cmd = generate_python_cmd(experiment_name, noise_std, noise_target, dataset)
-            generate_pbs_script(python_cmd, experiment_name, '8:00:00' if dataset == 'TinyImageNet' else '2:30:00')
+TOTAL = RUNS * len(TARGETS) * len(DATASETS) * len(NOISES)
+COUNT = 0
+
+for run in range(RUNS):
+    for dataset in DATASETS:
+        for noise_target in TARGETS:
+            for noise_std in NOISES:
+                COUNT += 1
+                experiment_name = f'{dataset}/{noise_target}/std{noise_std:.2f}/{run}'
+                if check_path_and_skip(experiment_name): continue
+                python_cmd = generate_python_cmd(experiment_name, noise_std, noise_target, dataset)
+                generate_pbs_script(python_cmd, experiment_name, TIMES[dataset])
 
 
 
